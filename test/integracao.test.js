@@ -139,4 +139,146 @@ describe('API de montadoras', () => {
         expect(response.status).toBe(201)
         expect(response.body.data).toHaveProperty('insertId')
     })
-}) 
+
+    it("Não deve cadastrar um veiculo pois o ano é invalido.", async () => {
+        const cliente = await request(app)
+            .post('/clientes')
+            .send({
+                nome: 'João da Silva',
+                cpf: '12345678900',
+                cep: '13180100',
+                numero: '123',
+                complemento: 'Apto 10'
+            })
+
+        const idCliente = cliente.body.data.insertId
+        const idMontadora = montadora.id
+
+        const response = await request(app)
+            .post('/veiculos')
+            .send({
+                idCliente: idCliente,
+                idMontadora: idMontadora,
+                modelo: 'Civic',
+                placa: 'ABC1D23',
+                ano: 20240,
+                cor: 'Preto',
+                valor: 120000
+            })
+
+        expect(response.status).toBe(500);
+    })
+
+    it("deve atualizar um veículo com sucesso.", async () => {
+        const cliente = await request(app)
+            .post('/clientes')
+            .send({
+                nome: 'João da Silva',
+                cpf: '12345678900',
+                cep: '13180100',
+                numero: '123',
+                complemento: 'Apto 10'
+            });
+
+        const idCliente = cliente.body.data.insertId;
+        const idMontadora = montadora.id;
+
+        const criar = await request(app)
+            .post('/veiculos')
+            .send({
+                idCliente: idCliente,
+                idMontadora: idMontadora,
+                modelo: 'Civic',
+                placa: 'ABC1D23',
+                ano: 2024,
+                cor: 'Preto',
+                valor: 120000
+            });
+
+        expect(criar.status).toBe(201);
+
+        const id = criar.body.data.insertId;
+
+        console.log("ID do veículo:", id);
+
+        const response = await request(app)
+            .put(`/veiculos?id=${id}`)
+            .send({
+                idCliente: idCliente,
+                idMontadora: idMontadora,
+                modelo: 'Lancer',
+                placa: 'ABC1D24',
+                ano: 2024,
+                cor: 'Preto',
+                valor: 120000
+            });
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toHaveProperty('affectedRows');
+    })
+
+    it("deve deletar um veículo com sucesso.", async () => {
+        const cliente = await request(app)
+            .post('/clientes')
+            .send({
+                nome: 'João da Silva',
+                cpf: '12345678900',
+                cep: '13180100',
+                numero: '123',
+                complemento: 'Apto 10'
+            });
+
+        const idCliente = cliente.body.data.insertId;
+        const idMontadora = montadora.id;
+
+        const criar = await request(app)
+            .post('/veiculos')
+            .send({
+                idCliente,
+                idMontadora,
+                modelo: 'Civic',
+                placa: 'ABC1D23',
+                ano: 2024,
+                cor: 'Preto',
+                valor: 120000
+            });
+
+        expect(criar.status).toBe(201);
+
+        const idVeiculo = criar.body.data.insertId;
+
+        const response = await request(app)
+            .delete(`/veiculos/${idVeiculo}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toHaveProperty('affectedRows');
+        expect(response.body.data.affectedRows).toBe(1);
+    })
+
+    it("deve listar os veículos com sucesso.", async () => {
+        const response = await request(app)
+            .get('/veiculos');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('data');
+        expect(Array.isArray(response.body.data)).toBe(true);
+    });
+
+    it("deve listar os clientes com sucesso.", async () => {
+        const response = await request(app)
+            .get('/clientes');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('data');
+        expect(Array.isArray(response.body.data)).toBe(true);
+    });
+
+    it("deve listar as montadoras com sucesso.", async () => {
+        const response = await request(app)
+            .get('/montadoras');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('data');
+        expect(Array.isArray(response.body.data)).toBe(true);
+    });
+})
